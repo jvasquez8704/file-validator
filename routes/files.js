@@ -3,17 +3,18 @@
  * host + /api/files
  */
  const { Router } = require('express');
- const { getFiles, getFile } = require('../controllers/files');
+ const { uploadFiles, processFile } = require('../controllers/files');
 
 
  const router = Router();
  
 //  router.use(validateToken);
  
- router.get('/', getFiles);
+ router.post('/', uploadFiles);
+ router.get('/', processFile );
 
 //  router.get('/v1/', getFile);
- router.get('/:fileId', getFile);
+//  router.get('/:fileId', getFile);
  
  
  module.exports = router

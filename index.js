@@ -6,6 +6,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
+const fileUpload = require('express-fileupload');
 // const { dbConnection } = require('./database/config');
 
  
@@ -25,6 +26,11 @@ app.use(express.static('public'));
 
 //Lectura y parseo de boby
 app.use(express.json());
+
+app.use(fileUpload({
+    useTempFiles : true,
+    tempFileDir : '/tmp/'
+}));
 
 //Routes
 //TODO : AUTH: 
