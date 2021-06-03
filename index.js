@@ -38,6 +38,7 @@ app.use(fileUpload({
 
 //TODO : CRUD: Eventos
 app.use('/api/files', require('./routes/files'));
+app.use('/api/events', require('./routes/events'));
 
 
 //configuramos

@@ -1,44 +1,14 @@
-const { Pool, Client } = require('pg');
+const { Pool } = require('pg');
 
 //todo => this helper has to be singleton
-const dbConnection = async () => {
-    try {
-       const client = new Client({
-            host:'localhost',
-            user:'walletmachine',
-            password:'',
-            database:'testdb',
-            port:'5432'
-        });
-        client.connect();
-        console.log('Conexión exitosa...');
-        return client;
-    } catch (error) {
-        console.log(error)
-        throw new Error('Error al conectar con DB');
-    }
-}
-
-
 const pool = new Pool({
-    host:'localhost',
-    user:'walletmachine',
-    password:'',
-    database:'testdb',
-    port:'5432'
+    host: process.env.HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB,
+    port: process.env.DB_PORT
 });
-
-// const pool = new Pool({
-//     host:'34.71.188.207',
-//     user:'postgres',
-//     password:'password',
-//     database:'gke_test_regional',
-//     port:'5432'
-// });
     
-  
-
 module.exports = {
-    dbConnection,
     pool
 }
