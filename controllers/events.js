@@ -23,7 +23,6 @@ const validateContent = async conntent => {
 
 const getRule = async geneId => {
     const query = 'SELECT * FROM genome_taxonomy WHERE gene_id = $1';
-    console.log('cartel de viejas ', query);
     const values = [geneId];
 
     const resultSet = await pool.query(query, values);
@@ -108,7 +107,7 @@ const doValidation = (id, value, __scale) => {
 }
 
 const processFile = async (req, res = response) => {
-    const { content, headers } = await readFile();
+    const { content, headers, headersMap } = await readFile();
     console.log('content size => ', content.length);
     validateHeaders(headers);
     //validateContent(content);
@@ -139,12 +138,66 @@ const processFile = async (req, res = response) => {
             message: _message
         }
     }));
-
+    //const proccesData = await saveData( headersMap ,content );
     res.json({
-        ok: true,
+        status: {code: 200, message: 'Success process'},
+        // saveData: proccesData,
+        saveData: false,
         data: validations
     });
 };
+
+const saveData = async ( headerFile, dataFile ) => {
+    try {
+        //Manual validation
+        const param = [headerFile.get('imdb_id'), 1];
+        let queryString = '';
+        let valuestHeader = null;
+        const resulset = await pool.query('SELECT * FROM genes.movie_code_header WHERE imdb_id = $1', [headerFile.get('imdb_id')]);
+        if (resulset.rowCount) {
+            queryUpdateHeader = 'UPDATE genes.movie_code_header SET user_id = $1, user_name = $2, version_current = $3 WHERE imdb_id = $4 RETURNING *';
+            queryUpdateData = 'UPDATE genes.movie_genes_coding SET is_active = $1 WHERE imdb_id = $2 RETURNING *';
+            valuesUpdateHeader = [headerFile.get('user_id'), headerFile.get('user_name'), `${headerFile.get('version_current')} v${resulset.rowCount + 1}`, headerFile.get('imdb_id')];
+            valuesUpdateData = ['false', headerFile.get('imdb_id')];
+            const resulsetUpdateHeader = await pool.query(queryUpdateHeader, valuesUpdateHeader);
+            const resulsetUpdateData = await pool.query(queryUpdateData, valuesUpdateData);
+            console.log(`UPDATE HEADER RESULTSET: ${resulsetUpdateHeader.rows[0]}`);
+            console.log(`UPDATE DATA RESULTSET COUNT: ${resulsetUpdateData.rowCount}`);
+        } else {
+            queryString = 'INSERT INTO genes.movie_code_header (movie_title, imdb_id, release_year, version_current, version_original, user_id, user_name, reviewer_id, reviewer_name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *';
+            valuestHeader = [headerFile.get('MOVIE TITLE'), headerFile.get('imdb_id'), headerFile.get('release_year'), `${headerFile.get('version_current')} v1`, headerFile.get('version_original'), headerFile.get('user_id'), headerFile.get('user_name'), headerFile.get('reviewer_id'), headerFile.get('reviewer_name')];
+            const resulsetHeader = await pool.query(queryString, valuestHeader);
+            console.log(`INSERTED Header: ${resulsetHeader.rows[0]}`);
+        }
+
+        const insertData = 'INSERT INTO genes.movie_genes_coding (gene_id, imdb_id, category, sub_category, sub_subcategory, cat_id, custom, gene_name, gene_value, user_id, is_active) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *';
+    
+        if(dataFile.length) {
+            dataFile.map( async (item, index) => {
+               if( item ) {
+                let {
+                    Category,
+                    SubCategory,
+                    SubSubCategory,
+                    voidCol,
+                    CAT_ID,
+                    Custom,
+                    Gene_ID,
+                    Gene_Name,
+                    VALUE
+                } = item;
+                Custom = true;
+                const valuesData = [Gene_ID, headerFile.get('imdb_id'), Category, SubCategory, SubSubCategory, CAT_ID, Custom, Gene_Name, VALUE, headerFile.get('user_id'), true];
+                Gene_ID && await pool.query(insertData, valuesData);
+               }
+            });
+        }
+
+    } catch (error) {
+        console.log('TRY saveData', error);
+    }
+    return true;
+}
 
 const readFile = async () => {
     const result = {};
@@ -182,10 +235,11 @@ const readFile = async () => {
                 !(Value == "" || Value == "--") && values.push(row);
             }
         });
+        result.headersMap = headerMap;
         result.headers = headerValues;
         result.content = values;
         console.log("HashMap => ", headerMap);
-        console.log("ROW => ", values[499]);
+        console.log("ROW => ", values[199]);
     } catch (err) {
         console.error(err);
     }
