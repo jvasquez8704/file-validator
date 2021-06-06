@@ -41,9 +41,8 @@ const doValidation = (id, value, __scale) => {
     let rejectionReasonMsg = null;
     let validations = scale.split(',');
     validations.length > 1 && console.log(`init rule ${id} --> scale --> ${scale} size --> ${ validations.length }`);
-    if(validations.length > 1) {//BLOCK_1
+    if(validations.length > 1) {//BLOCK_1 :: it's asume that value is a number or a range
         console.log(`   BLOCK_1:: n reglas --> ${JSON.stringify( validations )} `);
-        //se asume que sera un numero o un rango
         validations.map( _scale_ => {
             let _scale = _scale_.trim();
             if (isNaN(_scale) && _scale.split(range_char).length > 1) {
@@ -65,9 +64,7 @@ const doValidation = (id, value, __scale) => {
                 console.error(`     BLOCK_1::SUB_BLOCK_B:: ---> value:${value} == scale:${_scale} retval => ${retVal}`);
             }
         });
-    } else {//2_BLOCK
-        //validar si es numero o texto
-        //let [scale] = validations;
+    } else {//2_BLOCK::validate if type of value
         console.log(`   BLOCK_2:: 1 regla --> ${ scale } `);
         if(isNaN(scale) && scale == "Text box") {
             retVal = (value != "")
@@ -78,24 +75,24 @@ const doValidation = (id, value, __scale) => {
             retVal = (value >= x && value <= y) || false
             console.log(`       Es-rango --> ${ scale } ---> ${value} >= ${x} && ${value} <= ${y}  retval => ${ retVal } `);
             if(!retVal && !isNaN(value)) {
-                rejectionReasonMsg = '           * Fuera de rango numerico';
-                console.log(rejectionReasonMsg);
+                rejectionReasonMsg = `Value should be a number but value is out of range, the type is :: ${typeof(value)}`;
+                console.log('           * Fuera de rango numerico');
             }
             if(!retVal && isNaN(value)){
-                rejectionReasonMsg = `           * El valor no es un numero => el tipo es: ${typeof(value)}`;
-                console.log(rejectionReasonMsg);
+                rejectionReasonMsg = `Value should be a text, the tyoe is :: ${typeof(value)}`;
+                console.log(`           * El valor no es un numero => el tipo es: ${typeof(value)}`);
             }
             if(!retVal){
-                rejectionReasonMsg = `           * Motivo desconocido => valor: ${value}`;
-                console.log(rejectionReasonMsg);
+                rejectionReasonMsg = `Reason is unknown, value is :: ${value} and type is :: ${typeof(value)}`;
+                console.log(`           * Motivo desconocido => valor: ${value} y el tipo es :: ${typeof(value)}`);
             }
         } else if (isNaN(scale)) {
-            console.log('       BLOCK_2::SUB_BLOCK_C:: Otro ');    
+            console.log('       BLOCK_2::SUB_BLOCK_C::');    
         } else {
             retVal = value == scale || false
             if(!retVal) {
-                rejectionReasonMsg = `           * valor no son iguales => valor:${value} != scale: ${scale}`;
-                console.log(rejectionReasonMsg);
+                rejectionReasonMsg = `Value should be equal to scale :: value:${value} != scale: ${scale}`;
+                console.log(`           * valor no son iguales => valor:${value} != scale: ${scale}`);
             }
             console.log(`       BLOCK_2::SUB_BLOCK_D:: Es numero --> ${ scale } --- retval => ${ retVal } `);
         }
