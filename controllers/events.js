@@ -1,5 +1,6 @@
 const { response } = require('express');
 const path = require('path');
+const csv = require('csv-parser');
 const fs = require('fs');
 const { pool } = require('../database/connect');
 
@@ -7,7 +8,6 @@ const validateHeaders = headers  => {
     console.log('validate headers => ', headers);
 }
 const validateContent = async conntent => {
-
   const validations = conntent.map( rule => {
     const { Gene_ID, Gene_Name, VALUE } = rule;
     const _rule = getRule(Gene_ID);
@@ -135,6 +135,8 @@ const processFile = async (req, res = response) => {
             message: _message
         }
     }));
+
+
     //const proccesData = await saveData( headersMap ,content );
     res.json({
         status: {code: 200, message: 'Success process'},
@@ -242,6 +244,33 @@ const readFile = async () => {
     }
     return result;
 }
+
+const readCsvFile = async (req, res = response) => {
+    const path_file = path.join(__dirname, '../uploads/', 'test_data.csv');
+    let i = 0;
+    fs.createReadStream(path_file)
+    .pipe(csv({delimiter: ':'}))
+    .on('data', (data) => {
+        (i <= 20) && console.log(`row ${i} =>`,data);
+        i++;
+        results.push(data);
+    })
+    .on('end', () => {
+        console.log('Archivo procesado!!!');
+        //console.log(results);
+        // [
+        //   { NAME: 'Daffy Duck', AGE: '24' },
+        //   { NAME: 'Bugs Bunny', AGE: '22' }
+        // ]
+    });
+    await readFile();
+    
+    res.json({
+        ok: true,
+        data: true,
+        // token
+    });
+};
 
 
 
