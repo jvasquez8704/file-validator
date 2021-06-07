@@ -6,6 +6,7 @@ ENV ENV=${ENV}
 # Create app directory
 
 WORKDIR /api
+RUN mkdir -p /api/uploads
 COPY package*.json /api
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
