@@ -4,6 +4,29 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const { pool } = require('../database/connect');
 
+const uploadFiles =  async (req, res = response) => {
+    console.log('Files ', req.files);
+    let sampleFile;
+    let uploadPath;
+
+    if (!req.files || Object.keys(req.files).length === 0 || !req.files.sampleFile) {
+        return res.status(400).send('No files were uploaded.');
+    }
+
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    sampleFile = req.files.sampleFile;
+    // uploadPath = __dirname + '/files/' + sampleFile.name;
+    uploadPath = path.join(__dirname,  '../uploads/' , sampleFile.name);
+    console.log('path => ', uploadPath);
+    // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv(uploadPath, function(err) {
+        if (err)
+        return res.status(500).send(err);
+
+        res.send('File uploaded!');
+    });
+};
+
 const validateHeaders = headers  => {
     console.log('validate headers => ', headers);
 }
