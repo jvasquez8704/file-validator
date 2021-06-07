@@ -9,7 +9,9 @@ const cors = require('cors');
 const fileUpload = require('express-fileupload');
 // const { dbConnection } = require('./database/config');
 
- 
+ //added to https and certificate support
+const fs = require('fs');
+const https = require('https');
 
 //Creamos una instancia
 const app = express();
@@ -37,7 +39,7 @@ app.use(fileUpload({
 //app.use('/api/auth', require('./routes/auth'));
 
 //TODO : CRUD: Eventos
-app.use('/qa-records', require('./routes/files'));
+app.use('/file', require('./routes/files'));
 //app.use('/api/events', require('./routes/events'));
 
 
@@ -47,4 +49,4 @@ https.createServer({
     cert: fs.readFileSync('certs/cert1.pem')
 }, app).listen( process.env.PORT, () => {
     console.log( `Server started in port ${ process.env.PORT } ` );
-})
+});
