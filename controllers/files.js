@@ -39,17 +39,16 @@ const uploadFiles =  async (req, res = response) => {
                 data: null
             });
         }
+        _processFile(res ,uploadPath);
     });
-    _processFile(res ,uploadPath);
-    
 };
 
-const _processFile = async (res, path) => {
+const _processFile = async (res, _path) => {
     //1783(10%) => 178
     const minValueAllowed = 178;
     let statusCode = 200;
     let errors = null;
-    const { content, headers, headersMap } = await readFile('|', path);
+    const { content, headers, headersMap } = await _readFile('|', _path);
     const isHeaderValid = validateHeaders(headers);
     const { isDataValid, validations } = await validateContent(content);
     const isValidLength = minValueAllowed < validations.length;
@@ -154,9 +153,9 @@ const readFile = async ( separator = ',' ) => {
     return result;
 }
 
-const _readFile = async ( separator = ',' , path ) => {
+const _readFile = async ( separator = ',' , _path ) => {
     const result = {};
-    const path_file = path.join(path);
+    const path_file = path.join(_path);
     try {
         // read contents of the file
         const data = fs.readFileSync(path_file, 'UTF-8');
