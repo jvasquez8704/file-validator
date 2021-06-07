@@ -37,11 +37,14 @@ app.use(fileUpload({
 //app.use('/api/auth', require('./routes/auth'));
 
 //TODO : CRUD: Eventos
-app.use('/api/files', require('./routes/files'));
-app.use('/api/events', require('./routes/events'));
+app.use('/qa-records', require('./routes/files'));
+//app.use('/api/events', require('./routes/events'));
 
 
 //configuramos
-app.listen( process.env.PORT, () => {
+https.createServer({
+    key: fs.readFileSync('certs/privkey1.pem'),
+    cert: fs.readFileSync('certs/cert1.pem')
+}, app).listen( process.env.PORT, () => {
     console.log( `Server started in port ${ process.env.PORT } ` );
 })
