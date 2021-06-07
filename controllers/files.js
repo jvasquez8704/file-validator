@@ -4,34 +4,52 @@ const fs = require('fs');
 const { pool } = require('../database/connect');
 
 const uploadFiles =  async (req, res = response) => {
-    console.log('Files ', req.files);
+    const { author } = req.body;
     let sampleFile;
     let uploadPath;
 
-    if (!req.files || Object.keys(req.files).length === 0 || !req.files.sampleFile) {
-        return res.status(400).send('No files were uploaded.');
+    if (!author) {
+        res.status(400).json({
+            status: { code: 400, message: 'This service needs a autor', errors: null},
+            data: null
+        });
+    }
+
+    if (!req.files || Object.keys(req.files).length === 0 || !req.files.codingFile) {
+        res.status(400).json({
+            status: { code: 400, message: 'No files were uploaded.', errors: null},
+            data: null
+        });
     }
 
     // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-    sampleFile = req.files.sampleFile;
+    sampleFile = req.files.codingFile;
     // uploadPath = __dirname + '/files/' + sampleFile.name;
-    uploadPath = path.join(__dirname,  '../uploads/' , sampleFile.name);
+    uploadUserPath = path.join(__dirname,  `../uploads/${author}/`);
+    if (!fs.existsSync(uploadUserPath)) fs.mkdirSync(uploadUserPath);
+    
+    // uploadPath = path.join(__dirname,  '../uploads/' , sampleFile.name);
+    uploadPath = path.join(uploadUserPath , sampleFile.name);
     console.log('path => ', uploadPath);
     // Use the mv() method to place the file somewhere on your server
     sampleFile.mv(uploadPath, function(err) {
-        if (err)
-        return res.status(500).send(err);
-
-        res.send('File uploaded!');
+        if (err) {
+            res.status(500).json({
+                status: { code: 500, message: 'No files were uploaded.', errors: err },
+                data: null
+            });
+        }
     });
+    _processFile(res ,uploadPath);
+    
 };
 
-const processFile = async (req, res = response) => {
+const _processFile = async (res, path) => {
     //1783(10%) => 178
     const minValueAllowed = 178;
     let statusCode = 200;
     let errors = null;
-    const { content, headers, headersMap } = await readFile();
+    const { content, headers, headersMap } = await readFile('|', path);
     const isHeaderValid = validateHeaders(headers);
     const { isDataValid, validations } = await validateContent(content);
     const isValidLength = minValueAllowed < validations.length;
@@ -57,6 +75,38 @@ const processFile = async (req, res = response) => {
     });
 };
 
+const processFile = async (req, res = response) => {
+    //1783(10%) => 178
+    const minValueAllowed = 178;
+    let statusCode = 200;
+    let errors = null;
+    const { content, headers, headersMap } = await readFile('|');
+    const isHeaderValid = validateHeaders(headers);
+    const { isDataValid, validations } = await validateContent(content);
+    const isValidLength = minValueAllowed < validations.length;
+    console.log(`data size::${ content.length }, rows allowed to validate::${ validations.length }, isValidMinLength::${ isValidLength }, header is valid::${ isHeaderValid }, data is valid::${ isDataValid }`);
+
+    const isSaveData = isHeaderValid && isDataValid && isValidLength && await saveData( headersMap ,content );
+    if ( !isSaveData ) {
+        statusCode = 400;
+        errors = {
+            isValidMinLength: isValidLength,
+            isHeaderValid: isHeaderValid,
+            isDataValid: isDataValid,
+            isSaveData : isSaveData
+        }
+    }
+
+    res.status(statusCode).json({
+        status: { code: statusCode, message: 'Success process', errors },
+        data: {
+            headers,
+            genes: validations
+        }
+    });
+};
+
+//utils
 const readFile = async ( separator = ',' ) => {
     const result = {};
     const path_file = path.join(__dirname, '../uploads/', 'data.csv');
@@ -104,7 +154,53 @@ const readFile = async ( separator = ',' ) => {
     return result;
 }
 
-//utils
+const _readFile = async ( separator = ',' , path ) => {
+    const result = {};
+    const path_file = path.join(path);
+    try {
+        // read contents of the file
+        const data = fs.readFileSync(path_file, 'UTF-8');
+    
+        // split the contents by new line
+        const lines = data.split(/\r?\n/);
+    
+        // print all lines
+        let headerMap = new Map();
+        let headerValues = [];
+        let values = [];
+        lines.forEach((line, i) => {
+            if(i > 0 && i < 10) {
+                const [_key, _value] = line.substring(7).split(separator);
+                headerValues.push({key:_key, value: _value});
+                headerMap.set(_key, _value);
+            }
+            if(i > 10) {
+                const [ CATEGORY, SUBCATEGORY, SUBSUBSUBCATEGORY, VOIDCOL, CATID, CUSTOM, GeneID, GeneName, Value ] = line.split(separator);
+                const row = {
+                    Category:CATEGORY,
+                    SubCategory: SUBCATEGORY,
+                    SubSubCategory: SUBSUBSUBCATEGORY,
+                    voidCol: VOIDCOL,
+                    CAT_ID: CATID,
+                    Custom: CUSTOM,
+                    Gene_ID: GeneID,
+                    Gene_Name: GeneName,
+                    VALUE: Value
+                }
+                !(Value == "" || Value == "--") && values.push(row);
+            }
+        });
+        result.headersMap = headerMap;
+        result.headers = headerValues;
+        result.content = values;
+        console.log("HashMap => ", headerMap);
+        console.log("ROW => ", values[199]);
+    } catch (err) {
+        console.error(err);
+    }
+    return result;
+}
+
 const validateHeaders = headers  => {
     let retVal = null;
     headers.map( header => {
