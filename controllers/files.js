@@ -220,9 +220,9 @@ const validateContent = async content => {
         let _scale = null;
         if (resulset.rowCount) {
             const [result] = resulset.rows;
-            const { gene_scale } = result;
+            const { gene_scale, field_id } = result;
              _scale = gene_scale;
-            let { _result, message } = doValidation(Gene_ID, VALUE, gene_scale);
+            let { _result, message } = doValidation(Gene_ID, VALUE, gene_scale, field_id);
             _isValid = _result;
             isDataValid = _result;
             _message = message;
@@ -244,12 +244,16 @@ const validateContent = async content => {
 
     return { isDataValid, validations };
 }
-const doValidation = (id, value, __scale) => {
+const doValidation = (id, value, __scale, field_id) => {
     let range_char = "–";
     let scale = __scale.trim();
     let retVal = false;
     let rejectionReasonMsg = null;
     let validations = scale.split(',');
+    if(!!field_id) {
+        const _values = value.split(' ').reverse();
+        value = _values[0];     
+    }
     validations.length > 1 && console.log(`init rule ${id} --> scale --> ${scale} size --> ${ validations.length }`);
     if(validations.length > 1) {//BLOCK_1 :: it's asume that value is a number or a range
         //console.log(`   BLOCK_1:: n reglas --> ${JSON.stringify( validations )} `);
