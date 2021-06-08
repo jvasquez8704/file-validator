@@ -211,7 +211,7 @@ const validateHeaders = headers  => {
     return retVal;
 }
 const validateContent = async content => {
-    let isDataValid = null;
+    let isDataValid = true;
     const validations = await Promise.all(content.map( async rule => {
         const { Gene_ID, Gene_Name, VALUE } = rule;
         const resulset = await pool.query('SELECT * FROM genes.genome_taxonomy WHERE gene_id = $1', [Gene_ID]);
@@ -224,10 +224,11 @@ const validateContent = async content => {
              _scale = gene_scale;
             let { _result, message } = doValidation(Gene_ID, VALUE, gene_scale, field_id);
             _isValid = _result;
-            isDataValid = _result;
             _message = message;
-            isDataValid = !_result && false
-            //!isDataValid && console.log(`gene_id ${ Gene_ID } => ${isDataValid}`);
+            if(!_result){
+                isDataValid = false;
+            }
+            console.log(`gene_id ${ Gene_ID } => ${isDataValid}`);
         } else {
             console.log('rule no encontrado => ', rule);
         }
@@ -246,6 +247,7 @@ const validateContent = async content => {
 }
 const doValidation = (id, value, __scale, field_id) => {
     let range_char = "–";
+    let range_char2 = "-";
     let scale = __scale.trim();
     let retVal = false;
     let rejectionReasonMsg = null;
@@ -254,7 +256,6 @@ const doValidation = (id, value, __scale, field_id) => {
         const _values = value.split(' ').reverse();
         value = _values[0];     
     }
-    validations.length > 1 && console.log(`init rule ${id} --> scale --> ${scale} size --> ${ validations.length }`);
     if(validations.length > 1) {//BLOCK_1 :: it's asume that value is a number or a range
         //console.log(`   BLOCK_1:: n reglas --> ${JSON.stringify( validations )} `);
         validations.map( _scale_ => {
@@ -273,32 +274,54 @@ const doValidation = (id, value, __scale, field_id) => {
                 if(!retVal){
                     //console.log(`           *MSG Motivo desconocido => valor: ${value}`);
                 }
+            } else if (isNaN(_scale) && _scale.split(range_char2).length > 1) {
+                const [x, y] = _scale.split(range_char2);
+                console.log(`       x => ${x} , y => ${y}`);
+                retVal = (value >= x && value <= y);
+                console.log(`       BLOCK_1::SUB_BLOCK_B:: Es-rango --> ${ _scale } ---> ${value} >= x:${x} && y:${value} <= ${y}  retval => ${ retVal } `);
+                if(!retVal && !isNaN(value)) {
+                    console.log('           *MSG Fuera de rango numerico');
+                }
+                if(!retVal && isNaN(value)){
+                    console.log(`           *MSG El valor no es un numero => el tipo es: ${typeof(value)}`);
+                }
+                if(!retVal){
+                    console.log(`           *MSG Motivo desconocido => valor: ${value}`);
+                }
             } else {
                 retVal = value == _scale
                 //console.error(`     BLOCK_1::SUB_BLOCK_B:: ---> value:${value} == scale:${_scale} retval => ${retVal}`);
             }
         });
+    } else if (isNaN(scale) && scale.split(range_char2).length > 1) {//3_BLOCK::
+        const [x, y] = scale.split(range_char2);
+        console.log(`       x => ${x} , y => ${y}`);
+        retVal = (value >= x && value <= y);
+        console.log(`       BLOCK_3::SUB_BLOCK_A:: Es-rango --> ${ scale } ---> ${value} >= x:${x} && y:${value} <= ${y}  retval => ${ retVal } `);
+        if(!retVal && !isNaN(value)) {
+            console.log('           *MSG Fuera de rango numerico');
+        }
+        if(!retVal && isNaN(value)){
+            console.log(`           *MSG El valor no es un numero => el tipo es: ${typeof(value)}`);
+        }
+        if(!retVal){
+            console.log(`           *MSG Motivo desconocido => valor: ${value}`);
+        }
     } else {//2_BLOCK::validate if type of value
-        //console.log(`   BLOCK_2:: 1 regla --> ${ scale } `);
         if(isNaN(scale) && scale == "Text box") {
             retVal = (value != "")
-            //console.log(`       BLOCK_2::SUB_BLOCK_A:: (Text box) --> ${ scale } --- retval => ${ retVal } `);
+            //Never should happed
         } else if (isNaN(scale) && scale.includes(range_char)) {
             const [x, y] = scale.split(range_char);
-            //console.log(`       BLOCK_2::SUB_BLOCK_B:: x => ${x} , y => ${y}`);
             retVal = (value >= x && value <= y) || false
-            //console.log(`       Es-rango --> ${ scale } ---> ${value} >= ${x} && ${value} <= ${y}  retval => ${ retVal } `);
             if(!retVal && !isNaN(value)) {
                 rejectionReasonMsg = `Value should be a number but value is out of range, the type is :: ${typeof(value)}`;
-                //console.log('           * Fuera de rango numerico');
             }
             if(!retVal && isNaN(value)){
                 rejectionReasonMsg = `Value should be a text, the tyoe is :: ${typeof(value)}`;
-                //console.log(`           * El valor no es un numero => el tipo es: ${typeof(value)}`);
             }
             if(!retVal){
                 rejectionReasonMsg = `Reason is unknown, value is :: ${value} and type is :: ${typeof(value)}`;
-                //console.log(`           * Motivo desconocido => valor: ${value} y el tipo es :: ${typeof(value)}`);
             }
         } else if (isNaN(scale)) {
             //console.log('       BLOCK_2::SUB_BLOCK_C::');    
@@ -306,14 +329,10 @@ const doValidation = (id, value, __scale, field_id) => {
             retVal = value == scale || false
             if(!retVal) {
                 rejectionReasonMsg = `Value should be equal to scale :: value:${value} != scale: ${scale}`;
-                //console.log(`           * valor no son iguales => valor:${value} != scale: ${scale}`);
             }
-            //console.log(`       BLOCK_2::SUB_BLOCK_D:: Es numero --> ${ scale } --- retval => ${ retVal } `);
         }
     }
-    //console.log(`final rule ${id} --> scale --> ${scale} ---> value --->  ${value} ---> is-valid => ${retVal}`);
-    //validations.length > 1 && console.log('');
-    //validations.length > 1 && console.log('');
+    console.log(`Rule ${id} --> scale --> ${__scale} value --> ${ value }:: ::=> ${retVal}`);
     return {_result:retVal, message: rejectionReasonMsg};
 }
 const saveData = async ( headerFile, dataFile ) => {
