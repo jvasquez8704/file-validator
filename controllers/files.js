@@ -47,6 +47,7 @@ const _processFile = async (res, _path) => {
     //1783(10%) => 178
     const minValueAllowed = 178;
     let statusCode = 200;
+    let statusMgs = 'SUCCESS_PROCESS';
     let errors = null;
     const { content, headers, headersMap } = await _readFile('|', _path);
     const isHeaderValid = validateHeaders(headers);
@@ -57,6 +58,7 @@ const _processFile = async (res, _path) => {
     const isSaveData = isHeaderValid && isDataValid && isValidLength && await saveData( headersMap ,content );
     if ( !isSaveData ) {
         statusCode = 400;
+        statusMgs = 'BAD_REQUEST'
         errors = {
             isValidMinLength: isValidLength,
             isHeaderValid: isHeaderValid,
@@ -66,7 +68,7 @@ const _processFile = async (res, _path) => {
     }
 
     res.status(statusCode).json({
-        status: { code: statusCode, message: 'Success process', errors },
+        status: { code: statusCode, message: statusMgs, errors },
         data: {
             headers,
             genes: validations
