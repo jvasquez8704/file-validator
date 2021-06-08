@@ -10,7 +10,7 @@ const uploadFiles =  async (req, res = response) => {
 
     if (!author) {
         res.status(400).json({
-            status: { code: 400, message: 'This service needs a autor', errors: null},
+            status: { code: 400, message: 'This service needs an author', errors: null},
             data: null
         });
     }
