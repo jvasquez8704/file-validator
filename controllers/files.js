@@ -55,7 +55,7 @@ const _processFile = async (res, _path) => {
     console.log(`data size::${ content.length }, rows allowed to validate::${ validations.length }, isValidMinLength::${ isValidLength }, header is valid::${ isHeaderValid }, data is valid::${ isDataValid }`);
 
     const isSuccessValidation = isHeaderValid && isValidLength && isDataValid;
-
+    let isSaveData = false;
     if ( !isSuccessValidation ) {
         res.status(400).json({
             status: { 
@@ -75,7 +75,7 @@ const _processFile = async (res, _path) => {
         });
     }
 
-    const isSaveData = await saveData( headersMap ,content );
+    isSaveData = await saveData( headersMap ,content );
     
     if ( !isSaveData ) {
         res.status(500).json({
@@ -93,12 +93,12 @@ const _processFile = async (res, _path) => {
         });
     }
 
-    res.status(200).json({
+    res.status(200).json({data: {},
         status: { 
             code: 200, 
             message: 'Congratulations! Your file was uploaded successfully! '
-        },
-        data: true
+        }
+        
     });
 };
 
