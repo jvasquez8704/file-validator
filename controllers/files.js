@@ -46,8 +46,7 @@ const uploadFiles =  async (req, res = response) => {
 const _processFile = async (res, _path) => {
     //1783(10%) => 178
     const minValueAllowed = 178;
-    let statusCode = 200;
-    let statusMgs = 'SUCCESS_PROCESS';
+    let statusMgs = 'Congratulations! Your file was uploaded successfully!';
     let errors = null;
     const { content, headers, headersMap } = await _readFile('|', _path);
     const isHeaderValid = validateHeaders(headers);
@@ -55,24 +54,51 @@ const _processFile = async (res, _path) => {
     const isValidLength = minValueAllowed < validations.length;
     console.log(`data size::${ content.length }, rows allowed to validate::${ validations.length }, isValidMinLength::${ isValidLength }, header is valid::${ isHeaderValid }, data is valid::${ isDataValid }`);
 
-    const isSaveData = isHeaderValid && isDataValid && isValidLength && await saveData( headersMap ,content );
-    if ( !isSaveData ) {
-        statusCode = 400;
-        statusMgs = 'BAD_REQUEST'
-        errors = {
-            isValidMinLength: isValidLength,
-            isHeaderValid: isHeaderValid,
-            isDataValid: isDataValid,
-            isSaveData : isSaveData
-        }
+    const isSuccessValidation = isHeaderValid && isValidLength && isDataValid;
+
+    if ( !isSuccessValidation ) {
+        res.status(400).json({
+            status: { 
+                code: 400, 
+                message: 'Sorry the upload failed. Please download the report and check it for error messages. Once the errors are corrected upload the file again.', 
+                errors : {
+                    isValidMinLength: isValidLength,
+                    isHeaderValid: isHeaderValid,
+                    isDataValid: isDataValid,
+                    isSaveData : isSaveData
+                }
+            },
+            data: {
+                headers,
+                genes: validations
+            }
+        });
     }
 
-    res.status(statusCode).json({
-        status: { code: statusCode, message: statusMgs, errors },
-        data: {
-            headers,
-            genes: validations
-        }
+    const isSaveData = await saveData( headersMap ,content );
+    
+    if ( !isSaveData ) {
+        res.status(500).json({
+            status: { 
+                code: 500, 
+                message: 'Sorry. The file upload failed.', 
+                errors : {
+                    isValidMinLength: isValidLength,
+                    isHeaderValid: isHeaderValid,
+                    isDataValid: isDataValid,
+                    isSaveData : isSaveData
+                }
+            },
+            data: null
+        });
+    }
+
+    res.status(200).json({
+        status: { 
+            code: 200, 
+            message: 'Congratulations! Your file was uploaded successfully! '
+        },
+        data: true
     });
 };
 
