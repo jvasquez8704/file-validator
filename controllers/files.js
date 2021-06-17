@@ -57,7 +57,7 @@ const _processFile = async (res, _path) => {
     const isSuccessValidation = isHeaderValid && isValidLength && isDataValid;
     let isSaveData = false;
     if ( !isSuccessValidation ) {
-        res.status(400).json({
+        return res.status(400).json({
             status: { 
                 code: 400, 
                 message: 'Sorry the upload failed. Please download the report and check it for error messages. Once the errors are corrected upload the file again.', 
@@ -78,7 +78,7 @@ const _processFile = async (res, _path) => {
     isSaveData = await saveData( headersMap ,content );
     
     if ( !isSaveData ) {
-        res.status(500).json({
+        return res.status(500).json({
             status: { 
                 code: 500, 
                 message: 'Sorry. The file upload failed.', 
@@ -93,10 +93,10 @@ const _processFile = async (res, _path) => {
         });
     }
 
-    res.status(200).json({data: {},
+    return res.status(200).json({data: {},
         status: { 
             code: 200, 
-            message: 'Congratulations! Your file was uploaded successfully! '
+            message: 'Congratulations! Your file was uploaded successfully!'
         }
         
     });
@@ -124,7 +124,7 @@ const processFile = async (req, res = response) => {
         }
     }
 
-    res.status(statusCode).json({
+    return res.status(statusCode).json({
         status: { code: statusCode, message: 'Success process', errors },
         data: {
             headers,

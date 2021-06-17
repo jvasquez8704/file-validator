@@ -63,7 +63,7 @@ const doValidation = (id, value, __scale) => {
     let retVal = false;
     let rejectionReasonMsg = null;
     let validations = scale.split(',');
-    validations.length > 1 && console.log(`init rule ${id} --> scale --> ${scale} size --> ${ validations.length }`);
+    //validations.length > 1 && console.log(`init rule ${id} --> scale --> ${scale} size --> ${ validations.length }`);
     if(validations.length > 1) {//BLOCK_1 :: it's asume that value is a number or a range
         console.log(`   BLOCK_1:: n reglas --> ${JSON.stringify( validations )} `);
         validations.map( _scale_ => {
@@ -121,8 +121,8 @@ const doValidation = (id, value, __scale) => {
         }
     }
     console.log(`final rule ${id} --> scale --> ${scale} ---> value --->  ${value} ---> is-valid => ${retVal}`);
-    validations.length > 1 && console.log('');
-    validations.length > 1 && console.log('');
+    //validations.length > 1 && console.log('');
+    //validations.length > 1 && console.log('');
     return {_result:retVal, message: rejectionReasonMsg};
 }
 
