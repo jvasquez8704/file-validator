@@ -291,7 +291,7 @@ const doValidation = (id, value, __scale, field_id) => {
             if (isNaN(_scale) && _scale.split(range_char).length > 1) {
                 const [x, y] = _scale.split(range_char);
                 //console.log(`       x => ${x} , y => ${y}`);
-                retVal = (value >= x && value <= y);
+                if(!retVal) retVal = (value >= x && value <= y);
                 //console.log(`       BLOCK_1::SUB_BLOCK_A:: Es-rango --> ${ _scale } ---> ${value} >= x:${x} && y:${value} <= ${y}  retval => ${ retVal } `);
                 if(!retVal && !isNaN(value)) {
                     //console.log('           *MSG Fuera de rango numerico');
@@ -305,7 +305,7 @@ const doValidation = (id, value, __scale, field_id) => {
             } else if (isNaN(_scale) && _scale.split(range_char2).length > 1) {
                 const [x, y] = _scale.split(range_char2);
                 console.log(`       x => ${x} , y => ${y}`);
-                retVal = (value >= x && value <= y);
+                if(!retVal) retVal = (value >= x && value <= y);
                 console.log(`       BLOCK_1::SUB_BLOCK_B:: Es-rango --> ${ _scale } ---> ${value} >= x:${x} && y:${value} <= ${y}  retval => ${ retVal } `);
                 if(!retVal && !isNaN(value)) {
                     console.log('           *MSG Fuera de rango numerico');
@@ -317,7 +317,7 @@ const doValidation = (id, value, __scale, field_id) => {
                     console.log(`           *MSG Motivo desconocido => valor: ${value}`);
                 }
             } else {
-                retVal = value == _scale
+                if(!retVal) retVal = value == _scale
                 //console.error(`     BLOCK_1::SUB_BLOCK_B:: ---> value:${value} == scale:${_scale} retval => ${retVal}`);
             }
         });
