@@ -2,6 +2,9 @@ const ExcelJS = require('exceljs');
 const _ = require('lodash');
 const excelColumnName = require('excel-column-name');
 const { pool } = require('../database/connect');
+const path = require('path')
+
+const directoryPath = path.join(__dirname, '../documents')
 
 const validateRequiredColumns = (data, startRow,requiredColumns = []) => {
   const headers = data[startRow];
@@ -85,10 +88,10 @@ const processExcelFile = async (filePath, nameFile) => {
     const { dataItems } = await extractDataFromWorkbook(workbook);
 
     if (isNonSpaceFormat(dataItems, ["Category"])) {
-      report = validateData(nameFile, dataItems, 6, 0, 3);
+      report = await validateData(nameFile, dataItems, 6, 0, 3);
     } else {
       // agregar validación si no es ninguno de estos 2 formatos
-      report = validateData(nameFile ,dataItems, 7, 1, 4);
+      report = await validateData(nameFile ,dataItems, 7, 1, 4);
     }
 
   } catch (error) {
@@ -96,11 +99,11 @@ const processExcelFile = async (filePath, nameFile) => {
     report.nameFile = nameFile
     report.error = error
   }
-
   return report;
 };
 const sendDataToDB = async ( headerFile, dataFile ) => {
   let isSaved = null;
+  console.log('entered sendDataToDB', headerFile.get('imdb_id'))
   try {
       //Manual validation
       let queryString = '';
@@ -184,12 +187,14 @@ const validateData = (name, data, headerRowIndex, headerLowimit, headerMaxLimit)
   }
   let headerErrors = [];
   let columnsErrors = [];
+  const mapHeaders = new Map();
 
   //Validate Headers
   headers.forEach( async (row, idx) => {
     const header = row.toString().split(",");
     const key = !headerLowimit ? header[3] : header[4];
     const value = !headerLowimit ? header[4] : header[5];
+    mapHeaders.set(key, value);
     if (idx === 0) {
       if (!key || key.toUpperCase() !== "MOVIE TITLE") headerErrors.push('Error in Header => MOVIE TITLE')
       if (!value) headerErrors.push("Error in value of Header MOVIE TITLE")
@@ -216,10 +221,10 @@ const validateData = (name, data, headerRowIndex, headerLowimit, headerMaxLimit)
   if(!colNames.includes('SCALE')) columnsErrors.push("Error in column:: SCALE")
   if(!colNames.includes('SCORING')) columnsErrors.push("Error in column:: SCORING")
   if(columnsErrors.length) report.columnsErrors = columnsErrors;
+  report.headers = mapHeaders;
 
   // const { Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING } = colNames.toString().split(',');
   // console.log(`Validate Headers => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
-
   return report
 }
  
@@ -230,5 +235,6 @@ const isNonSpaceFormat = (data, requiredColumns = []) => {
 
 module.exports = {
     processExcelFile,
-    sendDataToDB
+    sendDataToDB,
+    getReports
 }
