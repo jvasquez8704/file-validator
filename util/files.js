@@ -77,6 +77,7 @@ const extractDataFromWorkbook = async (workbook) => {
   }
 }
 const processExcelFile = async (filePath, nameFile) => {
+  let report = {};
   try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(filePath);
@@ -84,17 +85,19 @@ const processExcelFile = async (filePath, nameFile) => {
     const { dataItems } = await extractDataFromWorkbook(workbook);
 
     if (isNonSpaceFormat(dataItems, ["Category"])) {
-      validateData(nameFile, dataItems, 6, 0, 3);
+      report = validateData(nameFile, dataItems, 6, 0, 3);
     } else {
       // agregar validación si no es ninguno de estos 2 formatos
-      validateData(nameFile ,dataItems, 7, 1, 4);
+      report = validateData(nameFile ,dataItems, 7, 1, 4);
     }
 
   } catch (error) {
-    //console.log(error)
+    console.error(error)
+    report.nameFile = nameFile
+    report.error = error
   }
 
-  return true;
+  return report;
 };
 const sendDataToDB = async ( headerFile, dataFile ) => {
   let isSaved = null;
@@ -172,19 +175,17 @@ const mapRows = (dataRows, headerRowIndex, headerLowimit, headerMaxLimit) => {
     headers
   }
 }
-const validateData = (nameFile, data, headerRowIndex, headerLowimit, headerMaxLimit) => {
-  let errors = {
-    nameFile
-  }
-  const headerErrors = [];
+const validateData = (name, data, headerRowIndex, headerLowimit, headerMaxLimit) => {
   const { items, colNames, headers } = mapRows(data, headerRowIndex, headerLowimit, headerMaxLimit);
+  let report = {
+    nameFile: name,
+    data: items,
+    headers
+  }
+  let headerErrors = [];
+  let columnsErrors = [];
 
-
-  // items.forEach((row) => {
-  //   const { Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING } = row;
-  //   console.log(`Validate data => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
-  // })
-
+  //Validate Headers
   headers.forEach( async (row, idx) => {
     const header = row.toString().split(",");
     const key = !headerLowimit ? header[3] : header[4];
@@ -204,15 +205,22 @@ const validateData = (nameFile, data, headerRowIndex, headerLowimit, headerMaxLi
       if (!key || key.toUpperCase() !== "CODER_NAME") headerErrors.push("Error in Header => coder_name")
     }
   })
+  if(headerErrors.length) report.headerErrors = headerErrors;
 
-  if(headerErrors.length) errors.header = headerErrors;
-
-  // console.log({errors})
-  // console.log({colNames})
-  console.log({headers})
+  //Validate Column names
+  if(!colNames.includes('Category')) columnsErrors.push("Error in column:: Category")
+  if(!colNames.includes('Sub-Category')) columnsErrors.push("Error in column:: Sub-Category")
+  if(!colNames.includes('Sub-Sub-Category')) columnsErrors.push("Error in column:: Sub-Sub-Category")
+  if(!colNames.includes('GENE ID')) columnsErrors.push("Error in column:: GENE ID")
+  if(!colNames.includes('GENE NAME')) columnsErrors.push("Error in column:: GENE NAME")
+  if(!colNames.includes('SCALE')) columnsErrors.push("Error in column:: SCALE")
+  if(!colNames.includes('SCORING')) columnsErrors.push("Error in column:: SCORING")
+  if(columnsErrors.length) report.columnsErrors = columnsErrors;
 
   // const { Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING } = colNames.toString().split(',');
   // console.log(`Validate Headers => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
+
+  return report
 }
  
 const isNonSpaceFormat = (data, requiredColumns = []) => {
