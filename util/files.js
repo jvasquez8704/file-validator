@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const _ = require('lodash');
 const excelColumnName = require('excel-column-name');
 const { pool } = require('../database/connect');
 
@@ -64,59 +65,18 @@ const getTableData = async (wb, wsName, autoFilter = true) => {
 const hasWorkSheet = (wb, sheet) => !!wb.getWorksheet(sheet)
 const extractDataFromWorkbook = async (workbook) => {
   // validate sheets
-  const sheetErrors = [];
   const requiredSheets = [1];
   const sheetNotFound = requiredSheets.find((s) => !hasWorkSheet(workbook, s));
   if (sheetNotFound) throw new Error(`Sheet not found: ${sheetNotFound}`);
 
   // validate columns by sheets
   const [dataItems] = await Promise.all([getTableData(workbook, 1)])
-
   
-
-
-/*
-  const columsItem = [
-    "name",
-    "sku",
-    "description",
-    "category",
-    "sub_category",
-    "price",
-    "is_sale",
-    "sale_price",
-    "sale_text",
-    "calories",
-    "is_veg",
-    "image",
-    "thumbnail",
-    "active",
-    "stock",
-  ];
-
-  const { errors: itemsErrors } = validateRequiredColumns(
-    dataItems,
-    columsItem
-  )
-
-
-  if (itemsErrors) {
-    sheetErrors.push({
-      sheetName: "items",
-      errors: itemsErrors,
-    });
-  }
-
-  if (sheetErrors.length > 0)
-    throw new Error(
-      `Validation fail on checking columns => errors: ${sheetErrors}`
-    )
-  */
   return {
     dataItems
   }
 }
-const processExcelFile = async (filePath) => {
+const processExcelFile = async (filePath, nameFile) => {
   try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(filePath);
@@ -124,26 +84,12 @@ const processExcelFile = async (filePath) => {
     const { dataItems } = await extractDataFromWorkbook(workbook);
 
     if (isNonSpaceFormat(dataItems, ["Category"])) {
-      validateDataNonSpaceFormat(dataItems);
+      validateData(nameFile, dataItems, 6, 0, 3);
     } else {
-      validateDataSpaceFormat(dataItems);
+      // agregar validación si no es ninguno de estos 2 formatos
+      validateData(nameFile ,dataItems, 7, 1, 4);
     }
-    const columsItemCodingTable = [
-      "Category",
-      "Sub-Category",
-      "Sub-Sub-Category",
-      "GENE ID",
-      "GENE NAME",
-      "SCALE",
-      "SCORING",
-    ];
 
-    const columsItemHeaderTable = [
-      "MOVIE TITLE",
-      "imdb_id",
-      "release_year",
-      "coder_name",
-    ];
   } catch (error) {
     //console.log(error)
   }
@@ -202,70 +148,71 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
   }
   return isSaved;
 }
+const mapRows = (dataRows, headerRowIndex, headerLowimit, headerMaxLimit) => {
+  const colNames = dataRows[headerRowIndex].filter( col => col !== null);//posN
+  const headers = [];
+  for (let i = headerLowimit; i <= headerMaxLimit; i++) {
+     headers.push(dataRows[i])    
+  }
 
-const validateDataNonSpaceFormat = async data => {
-  console.log(`files::validateDataNonSpaceFormat`)
-  data.forEach((element, idx) => {
-    const [,Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING ] = element.toString().split(',');
-    const [,,, key, value ] = element.toString().split(',');
-    //headers
-    if(idx === 0 ) {
-      if(!key || key !== 'MOVIE TITLE') throw new Error('Error in Header => MOVIE TITLE')
-      if(!value) throw new Error('Error in value of Header MOVIE TITLE')
-    }
-    if(idx === 1 ) {
-      if(!key || key !== 'imdb_id') throw new Error('Error in Header => imdb_id')
-      if(!value) throw new Error('Error in value of Header imdb_id')
-    }
-    if(idx === 2 ) {
-      if(!key || key !== 'release_year') throw new Error('Error in Header => release_year')
-    }
-    if(idx === 3 ) {
-      if(!key || key !== 'coder_name') throw new Error('Error in Header => coder_name')
-    }
-
-    //headers row
-    if(idx === 6 ) { 
-      console.log(`Validate Headers => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
-    }
-
-    //data
-    if(idx > 6 ) { 
-      //console.log(`Validate data => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
-    }
+  const items = dataRows.slice(headerRowIndex).map((row) => {
+    const rowData = {};
+    colNames.forEach((key, index) => {
+      if (key && key !== '') {
+        if (row[index] && row[index] !== '') {
+          rowData[_.snakeCase(key)] = row[index];
+        }
+      }
+    })
+    return rowData;
   })
+  return {
+    items,
+    colNames,
+    headers
+  }
 }
+const validateData = (nameFile, data, headerRowIndex, headerLowimit, headerMaxLimit) => {
+  let errors = {
+    nameFile
+  }
+  const headerErrors = [];
+  const { items, colNames, headers } = mapRows(data, headerRowIndex, headerLowimit, headerMaxLimit);
 
-const validateDataSpaceFormat = async data => {
-  data.forEach((element, idx) => {
-    const [,, Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING ] = element.toString().split(',');
-    const [,,,, key, value ] = element.toString().split(',');
-    //headers
-    if(idx === 1 ) {
-      if(!key || key !== 'MOVIE TITLE') throw new Error('Error in Header => MOVIE TITLE')
-      if(!value) throw new Error('Error in value of Header MOVIE TITLE')
-    }
-    if(idx === 2 ) {
-      if(!key || key !== 'imdb_id') throw new Error('Error in Header => imdb_id')
-      if(!value) throw new Error('Error in value of Header imdb_id')
-    }
-    if(idx === 3 ) {
-      if(!key || key !== 'release_year') throw new Error('Error in Header => release_year')
-    }
-    if(idx === 4 ) {
-      if(!key || key !== 'coder_name') throw new Error('Error in Header => coder_name')
-    }
-    
-    //headers row
-    if(idx === 7 ) { 
-      console.log(`Validate Headers => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
-    }
 
-    //data row
-    if(idx > 8 ) { 
-      //console.log(`Validate data => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
+  // items.forEach((row) => {
+  //   const { Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING } = row;
+  //   console.log(`Validate data => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
+  // })
+
+  headers.forEach( async (row, idx) => {
+    const header = row.toString().split(",");
+    const key = !headerLowimit ? header[3] : header[4];
+    const value = !headerLowimit ? header[4] : header[5];
+    if (idx === 0) {
+      if (!key || key.toUpperCase() !== "MOVIE TITLE") headerErrors.push('Error in Header => MOVIE TITLE')
+      if (!value) headerErrors.push("Error in value of Header MOVIE TITLE")
+    }
+    if (idx === 1) {
+      if (!key || key.toUpperCase() !== "IMDB_ID") headerErrors.push("Error in Header => imdb_id")
+      if (!value) headerErrors.push("Error in value of Header imdb_id")
+    }
+    if (idx === 2) {
+      if (!key || key.toUpperCase() !== "RELEASE_YEAR") headerErrors.push("Error in Header => release_year")
+    }
+    if (idx === 3) {
+      if (!key || key.toUpperCase() !== "CODER_NAME") headerErrors.push("Error in Header => coder_name")
     }
   })
+
+  if(headerErrors.length) errors.header = headerErrors;
+
+  // console.log({errors})
+  // console.log({colNames})
+  console.log({headers})
+
+  // const { Category, Sub_Category, Sub_Sub_Category, GENE_ID, GENE_NAME, SCALE, SCORING } = colNames.toString().split(',');
+  // console.log(`Validate Headers => ${Category}, ${Sub_Category}, ${Sub_Sub_Category}, ${GENE_ID} ${GENE_NAME}, ${SCALE}, ${SCORING}`)
 }
  
 const isNonSpaceFormat = (data, requiredColumns = []) => {

@@ -13,13 +13,12 @@ fs.readdir(directoryPath, function (err, files) {
     } 
     //listing all files using forEach
     files.forEach(async (file) => {
-        console.log(`file => ${file}`)
         const filePath = path.join(directoryPath, file)
-        await processExcelFile(filePath)
+        await processExcelFile(filePath, file)
         // Do whatever you want to do with the f
     })
 })     
 
 
  //list files
-console.log(`a webo!!!`)
+console.log(`Finish process!!!`)
