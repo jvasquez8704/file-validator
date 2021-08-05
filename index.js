@@ -1,6 +1,7 @@
 //requiring path and fs modules
 const path = require('path')
 const fs = require('fs')
+require('dotenv').config();
 
 const { sendDataToDB, processExcelFile } = require('./util/files')
 //joining path of directory 

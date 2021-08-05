@@ -126,7 +126,7 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
           dataFile.map( async (item, index) => {
              if( item ) {
               let { category, sub_category, sub_sub_category, gene_id, gene_name, scale, scoring }  = item;
-              const valuesData = [gene_id, headerFile.get('imdb_id'), category, , sub_category, sub_sub_category, gene_name, scale, scoring, true];
+              const valuesData = [gene_id, headerFile.get('imdb_id'), category,  sub_category, sub_sub_category, gene_name, scale, scoring, true];
               await pool.query(insertData, valuesData);
              }
           })
