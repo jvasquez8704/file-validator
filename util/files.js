@@ -219,6 +219,5 @@ const isNonSpaceFormat = (data, requiredColumns = []) => {
 
 module.exports = {
     processExcelFile,
-    sendDataToDB,
-    getReports
+    sendDataToDB
 }
