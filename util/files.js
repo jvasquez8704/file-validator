@@ -139,14 +139,14 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
   return isSaved;
 }
 const mapRows = (dataRows, headerRowIndex, headerLowimit, headerMaxLimit) => {
-  const colNames = dataRows[headerRowIndex].filter( col => col !== null).map( col => col.replace(' ','_'));//
+  const colNames = dataRows[headerRowIndex].filter( col => col !== null);
   const headers = [];
   for (let i = headerLowimit; i <= headerMaxLimit; i++) {
      headers.push(dataRows[i])    
   }
 
   const offsetCol = headerLowimit ? 2 : 1;
-  const items = dataRows.slice(headerRowIndex).map((row) => {
+  const items = dataRows.slice(headerRowIndex + 1).map((row) => {
     const rowData = {};
     colNames.forEach((key, index) => {
       if (key && key !== '') {

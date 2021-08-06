@@ -25,7 +25,6 @@ try {
                 reports.push(report)
             }
         })
-        console.log({reports})
     }) 
 } catch (error) {
     console.log(error)
