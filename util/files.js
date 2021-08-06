@@ -139,18 +139,21 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
   return isSaved;
 }
 const mapRows = (dataRows, headerRowIndex, headerLowimit, headerMaxLimit) => {
-  const colNames = dataRows[headerRowIndex].filter( col => col !== null);//posN
+  const colNames = dataRows[headerRowIndex].filter( col => col !== null).map( col => col.replace(' ','_'));//
   const headers = [];
   for (let i = headerLowimit; i <= headerMaxLimit; i++) {
      headers.push(dataRows[i])    
   }
 
+  const offsetCol = headerLowimit ? 2 : 1;
   const items = dataRows.slice(headerRowIndex).map((row) => {
     const rowData = {};
     colNames.forEach((key, index) => {
       if (key && key !== '') {
-        if (row[index] && row[index] !== '') {
-          rowData[_.snakeCase(key)] = row[index];
+        if (row[index + offsetCol] && row[index + offsetCol] !== '') {
+          rowData[_.snakeCase(key)] = row[index + offsetCol]
+        }else{
+          rowData[_.snakeCase(key)] = '';
         }
       }
     })
