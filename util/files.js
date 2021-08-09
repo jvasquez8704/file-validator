@@ -103,6 +103,7 @@ const processExcelFile = async (filePath, nameFile) => {
 };
 const sendDataToDB = async ( headerFile, dataFile ) => {
   let isSaved = null;
+  console.log(headerFile);
   try {
       //Manual validation
       let queryString = '';
@@ -126,7 +127,7 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
           dataFile.map( async (item, index) => {
              if( item ) {
               let { category, sub_category, sub_sub_category, gene_id, gene_name, scale, scoring }  = item;
-              const valuesData = [gene_id, headerFile.get('imdb_id'), category, , sub_category, sub_sub_category, gene_name, scale, scoring, true];
+              const valuesData = [gene_id, headerFile.get('imdb_id'), category, sub_category, sub_sub_category, gene_name, scale, scoring, true];
               await pool.query(insertData, valuesData);
              }
           })
@@ -134,6 +135,7 @@ const sendDataToDB = async ( headerFile, dataFile ) => {
       isSaved = true;
   } catch (error) {
       isSaved = false;
+      
       console.log(error);
   }
   return isSaved;

@@ -1,6 +1,7 @@
 //requiring path and fs modules
 const path = require('path')
 const fs = require('fs')
+require('dotenv').config();
 
 const { sendDataToDB, processExcelFile } = require('./util/files')
 //joining path of directory 
@@ -9,10 +10,15 @@ let reports = [];
 //passsing directoryPath and callback function
 
 try {
+    //var start = new Date()
+    //var hrstart = process.hrtime()
     fs.readdir(directoryPath, function (err, files) {
         if (err) {
             throw new Error('Unable to scan directory: ' + err)
-        } 
+        }
+        console.log("File list:");
+        console.log(files); 
+        console.log("End of file list:");
         files.forEach(async (file) => {
             if(path.extname(file) === ".xlsx") {
                 const filePath = path.join(directoryPath, file)
@@ -22,10 +28,15 @@ try {
                 if(!error && !headerErrors && !columnsErrors) { 
                     await sendDataToDB(headers, data)
                 }
+                console.log(report);
                 reports.push(report)
             }
         })
     }) 
+    //var end = new Date() - start,
+    //hrend = process.hrtime(hrstart)
+    //console.info('Execution time: %dms', end)
+    //console.info('Execution time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
 } catch (error) {
     console.log(error)
 }

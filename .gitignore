@@ -4,6 +4,7 @@ node_modules/
 *.csv
 *.xls
 *.xlsx
-
+plex_rejectedFiles.zip
+plex_rejectedFiles/
 certs/
 /certs
